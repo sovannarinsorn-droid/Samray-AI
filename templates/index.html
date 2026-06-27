@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>សម្រាយរឿង AI — Khmer AI Dubbing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanuman:wght@400;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #07090f;
+    --surface:  #0e1118;
+    --border:   #1c2133;
+    --accent:   #3b7fff;
+    --accent2:  #7c3aed;
+    --glow:     rgba(59,127,255,0.18);
+    --text:     #e8eaf0;
+    --muted:    #6b7494;
+    --white:    #ffffff;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE TEXTURE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 2rem;
+    background: rgba(7,9,15,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Hanuman', serif;
+    font-size: 1.2rem; font-weight: 900;
+    color: var(--white);
+    text-decoration: none;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+
+  .nav-logo span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none; font-size: 0.9rem;
+    transition: color .2s;
+  }
+  .nav-links a:hover { color: var(--white); }
+
+  .nav-cta {
+    background: var(--accent);
+    color: var(--white) !important;
+    padding: 0.5rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+  }
+  .nav-cta:hover { background: #2d6ee0 !important; color: var(--white) !important; }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 8rem 1.5rem 4rem;
+    position: relative;
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59,127,255,0.12) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: rgba(59,127,255,0.1);
+    border: 1px solid rgba(59,127,255,0.3);
+    border-radius: 999px;
+    padding: 0.35rem 1rem;
+    font-size: 0.8rem; color: var(--accent);
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  h1 {
+    font-family: 'Hanuman', serif;
+    font-size: clamp(2.2rem, 6vw, 4rem);
+    font-weight: 900;
+    line-height: 1.15;
+    color: var(--white);
+    margin-bottom: 1.2rem;
+    max-width: 800px;
+  }
+
+  h1 .hl {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  .hero-sub {
+    font-size: clamp(1rem, 2.5vw, 1.15rem);
+    color: var(--muted);
+    max-width: 520px;
+    margin-bottom: 2.5rem;
+    font-family: 'Hanuman', serif;
+  }
+
+  /* ── URL SUBMIT BOX ── */
+  .submit-box {
+    display: flex; gap: 0.75rem;
+    max-width: 540px; width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  .submit-box input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1.1rem;
+    color: var(--white);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .submit-box input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--glow);
+  }
+
+  .submit-box input::placeholder { color: var(--muted); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: var(--white);
+    border: none; border-radius: 10px;
+    padding: 0.85rem 1.5rem;
+    font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+    transition: opacity .2s, transform .1s;
+    text-decoration: none; display: inline-flex; align-items: center;
+  }
+
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:active { transform: scale(0.97); }
+
+  .hero-hint {
+    font-size: 0.8rem; color: var(--muted);
+    font-family: 'Hanuman', serif;
+  }
+
+  /* ── WAVE ANIMATION ── */
+  .wave-container {
+    display: flex; align-items: center; gap: 3px;
+    margin: 2rem auto 0;
+    height: 40px;
+  }
+
+  .wave-bar {
+    width: 4px; border-radius: 4px;
+    background: linear-gradient(to top, var(--accent), var(--accent2));
+    animation: wave 1.2s ease-in-out infinite;
+  }
+
+  .wave-bar:nth-child(1)  { height: 12px; animation-delay: 0s; }
+  .wave-bar:nth-child(2)  { height: 28px; animation-delay: .1s; }
+  .wave-bar:nth-child(3)  { height: 20px; animation-delay: .2s; }
+  .wave-bar:nth-child(4)  { height: 36px; animation-delay: .3s; }
+  .wave-bar:nth-child(5)  { height: 24px; animation-delay: .4s; }
+  .wave-bar:nth-child(6)  { height: 32px; animation-delay: .5s; }
+  .wave-bar:nth-child(7)  { height: 16px; animation-delay: .6s; }
+  .wave-bar:nth-child(8)  { height: 28px; animation-delay: .7s; }
+  .wave-bar:nth-child(9)  { height: 20px; animation-delay: .8s; }
+  .wave-bar:nth-child(10) { height: 12px; animation-delay: .9s; }
+
+  @keyframes wave {
+    0%, 100% { transform: scaleY(1); opacity: 0.7; }
+    50% { transform: scaleY(1.8); opacity: 1; }
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    padding: 5rem 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .section-label {
+    font-size: 0.75rem; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 0.75rem;
+  }
+
+  h2 {
+    font-family: 'Hanuman', serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 900; color: var(--white);
+    margin-bottom: 1rem;
+  }
+
+  .section-sub {
+    color: var(--muted); max-width: 500px;
+    font-family: 'Hanuman', serif;
+    font-size: 1rem; margin-bottom: 3rem;
+  }
+
+  /* ── HOW IT WORKS ── */
+  #how { text-align: center; }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem; margin-top: 2rem;
+  }
+
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    position: relative;
+    transition: border-color .25s, transform .25s;
+  }
+
+  .step:hover {
+    border-color: rgba(59,127,255,0.4);
+    transform: translateY(-4px);
+  }
+
+  .step-num {
+    font-size: 2.5rem; font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 0.75rem; line-height: 1;
+  }
+
+  .step h3 {
+    font-family: 'Hanuman', serif;
+    font-size: 1.05rem; font-weight: 700;
+    color: var(--white); margin-bottom: 0.5rem;
+  }
+
+  .step p {
+    font-family: 'Hanuman', serif;
+    font-size: 0.9rem; color: var(--muted); line-height: 1.6;
+  }
+
+  /* ── PLATFORMS ── */
+  .platforms {
+    display: flex; flex-wrap: wrap; gap: 0.75rem;
+    justify-content: center; margin-top: 2rem;
+  }
+
+  .platform-chip {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.5rem 1.1rem;
+    font-size: 0.85rem; color: var(--text);
+  }
+
+  .platform-chip .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+
+  /* ── FEATURES ── */
+  #features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem; align-items: center;
+  }
+
+  .features-text h2 { margin-bottom: 0.75rem; }
+
+  .feature-list { list-style: none; margin-top: 1.5rem; }
+  .feature-list li {
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Hanuman', serif;
+    font-size: 0.95rem; color: var(--text);
+  }
+
+  .feature-list li:last-child { border-bottom: none; }
+
+  .feature-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: rgba(59,127,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; flex-shrink: 0; margin-top: 1px;
+  }
+
+  .features-demo {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 1.5rem;
+    position: relative;
+  }
+
+  .demo-bar {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .demo-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+
+  .demo-content {
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 1.2rem;
+  }
+
+  .demo-msg {
+    display: flex; gap: 0.75rem; margin-bottom: 1rem;
+    font-family: 'Hanuman', serif; font-size: 0.85rem;
+  }
+
+  .demo-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    flex-shrink: 0; display: flex; align-items: center;
+    justify-content: center; font-size: 0.7rem; color: white;
+  }
+
+  .demo-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 0.6rem 0.9rem;
+    color: var(--text); line-height: 1.5;
+  }
+
+  .demo-bubble.bot {
+    background: rgba(59,127,255,0.08);
+    border-color: rgba(59,127,255,0.2);
+  }
+
+  .demo-progress {
+    margin-top: 0.5rem;
+  }
+
+  .progress-bar {
+    height: 4px; background: var(--border); border-radius: 4px;
+    overflow: hidden; margin-top: 0.4rem;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 4px;
+    animation: progress 3s ease-in-out infinite;
+  }
+
+  @keyframes progress {
+    0% { width: 0%; }
+    60% { width: 80%; }
+    100% { width: 95%; }
+  }
+
+  /* ── PRICING ── */
+  #pricing { text-align: center; }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem; margin-top: 2.5rem; max-width: 900px; margin-inline: auto;
+  }
+
+  .price-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2rem 1.75rem;
+    text-align: left;
+    transition: border-color .25s, transform .25s;
+    position: relative;
+  }
+
+  .price-card:hover { transform: translateY(-4px); }
+
+  .price-card.featured {
+    border-color: var(--accent);
+    background: linear-gradient(160deg, rgba(59,127,255,0.07), var(--surface));
+  }
+
+  .price-badge {
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white; font-size: 0.72rem; font-weight: 700;
+    padding: 0.25rem 0.9rem; border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .price-name {
+    font-family: 'Hanuman', serif;
+    font-size: 1.1rem; font-weight: 700;
+    color: var(--white); margin-bottom: 0.5rem;
+  }
+
+  .price-amount {
+    font-size: 2rem; font-weight: 900; color: var(--white);
+    margin-bottom: 0.25rem;
+  }
+
+  .price-amount span { font-size: 1rem; font-weight: 400; color: var(--muted); }
+
+  .price-desc {
+    font-family: 'Hanuman', serif;
+    font-size: 0.85rem; color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .price-features { list-style: none; margin-bottom: 1.75rem; }
+  .price-features li {
+    font-family: 'Hanuman', serif;
+    font-size: 0.88rem; color: var(--text);
+    padding: 0.4rem 0;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+
+  .price-features li::before {
+    content: '✓';
+    color: var(--accent); font-weight: 700; font-size: 0.8rem;
+  }
+
+  .btn-outline {
+    display: block; text-align: center;
+    border: 1px solid var(--border);
+    color: var(--text); border-radius: 10px;
+    padding: 0.75rem; font-size: 0.9rem;
+    text-decoration: none;
+    transition: border-color .2s, color .2s;
+    font-family: 'Hanuman', serif;
+  }
+
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── CTA SECTION ── */
+  #cta {
+    text-align: center;
+    padding: 5rem 1.5rem;
+  }
+
+  .cta-box {
+    max-width: 640px; margin: 0 auto;
+    background: linear-gradient(135deg, rgba(59,127,255,0.08), rgba(124,58,237,0.08));
+    border: 1px solid rgba(59,127,255,0.2);
+    border-radius: 24px;
+    padding: 3.5rem 2rem;
+  }
+
+  .cta-box h2 { margin-bottom: 0.75rem; }
+
+  .cta-box p {
+    font-family: 'Hanuman', serif;
+    color: var(--muted); margin-bottom: 2rem;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem 1.5rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-family: 'Hanuman', serif;
+  }
+
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--accent); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    width: 100%; height: 1px;
+    background: var(--border);
+    max-width: 1100px; margin: 0 auto;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 1rem; }
+    .nav-links { display: none; }
+    #features { grid-template-columns: 1fr; gap: 2rem; }
+    .submit-box { flex-direction: column; }
+    .btn-primary { text-align: center; justify-content: center; }
+  }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 0.75rem 1.5rem;
+    font-family: 'Hanuman', serif; font-size: 0.9rem; color: var(--text);
+    z-index: 999; transition: transform .3s ease;
+    white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#"><span>សម្រាយ</span>រឿង AI</a>
+  <ul class="nav-links">
+    <li><a href="#how">របៀបប្រើ</a></li>
+    <li><a href="#features">លក្ខណៈ</a></li>
+    <li><a href="#pricing">តំលៃ</a></li>
+    <li><a href="{{ telegram_bot }}" target="_blank" class="nav-cta">ប្រើឥឡូវ →</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-glow"></div>
+  <div class="badge">🇰🇭 AI Dubbing • បកប្រែ Voice ខ្មែរ</div>
+  <h1>បកប្រែ Video ណាមួយ<br>មក<span class="hl">ភាសាខ្មែរ</span> ដោយ AI</h1>
+  <p class="hero-sub">ផ្ញើ link YouTube, TikTok, Facebook ឬ Instagram — ទទួល video ខ្មែរ ក្នុង​រយៈ​ពេល​តិច​ជាង​ ១០​នាទី</p>
+
+  <div class="submit-box">
+    <input type="url" id="urlInput" placeholder="paste link video នៅទីនេះ..." />
+    <button class="btn-primary" onclick="submitUrl()">បកប្រែ →</button>
+  </div>
+  <p class="hero-hint">YouTube · TikTok · Facebook · Instagram · Twitter — ទាំងអស់ free!</p>
+
+  <div class="wave-container">
+    <div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="section-label">របៀបប្រើ</div>
+  <h2>ងាយស្រួល ៣ជំហាន</h2>
+  <p class="section-sub" style="margin-inline: auto;">គ្មាន app, គ្មាន account — ប្រើ Telegram ភ្លាម</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <h3>Copy Link</h3>
+      <p>Copy link video ពី YouTube, TikTok, Facebook ឬ Instagram ណាក៏បាន</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <h3>ផ្ញើទៅ Bot</h3>
+      <p>Paste link ចូល Telegram bot យើង ឬ paste ក្នុង box ខាងលើ</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <h3>ទទួល Video ខ្មែរ</h3>
+      <p>Bot AI បកប្រែ voice ទៅខ្មែរ ហើយផ្ញើ video + subtitle ត្រឡប់មក</p>
+    </div>
+  </div>
+
+  <div class="platforms">
+    <div class="platform-chip"><div class="dot" style="background:#ff0000"></div> YouTube</div>
+    <div class="platform-chip"><div class="dot" style="background:#010101"></div> TikTok</div>
+    <div class="platform-chip"><div class="dot" style="background:#1877f2"></div> Facebook</div>
+    <div class="platform-chip"><div class="dot" style="background:#e1306c"></div> Instagram</div>
+    <div class="platform-chip"><div class="dot" style="background:#1da1f2"></div> Twitter/X</div>
+    <div class="platform-chip"><div class="dot" style="background:#4caf50"></div> Video File</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="features-text">
+    <div class="section-label">លក្ខណៈ</div>
+    <h2>AI ថ្មីបំផុត<br>ដើម្បី Voice ខ្មែរ</h2>
+    <ul class="feature-list">
+      <li>
+        <div class="feature-icon">🎙️</div>
+        <div><strong>Whisper AI</strong> — ស្គាល់ speech ពី ៩៩ ភាសា ត្រឹមត្រូវ ៩៥%+</div>
+      </li>
+      <li>
+        <div class="feature-icon">🔇</div>
+        <div><strong>លុប audio ដើម ១០០%</strong> — ឮតែ voice ខ្មែរ គ្មាន audio ចម្រុះ</div>
+      </li>
+      <li>
+        <div class="feature-icon">🏷️</div>
+        <div><strong>Auto ចំណងជើង</strong> — AI ស្វែងយល់សាច់រឿង ដាក់ title ខ្មែរ</div>
+      </li>
+      <li>
+        <div class="feature-icon">✂️</div>
+        <div><strong>Auto Split</strong> — video ធំ split ជាភាគ ផ្ញើ​ម្ដង​ៗ​ ងាយ​ download</div>
+      </li>
+      <li>
+        <div class="feature-icon">📄</div>
+        <div><strong>SRT Subtitle</strong> — ទទួល subtitle file ខ្មែរ ដាច់ដោយឡែក</div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="features-demo">
+    <div class="demo-bar">
+      <div class="demo-dot" style="background:#ff5f57"></div>
+      <div class="demo-dot" style="background:#ffbd2e"></div>
+      <div class="demo-dot" style="background:#28c840"></div>
+    </div>
+    <div class="demo-content">
+      <div class="demo-msg">
+        <div class="demo-avatar">👤</div>
+        <div class="demo-bubble">https://youtube.com/watch?v=abc123</div>
+      </div>
+      <div class="demo-msg">
+        <div class="demo-avatar" style="background:linear-gradient(135deg,#3b7fff,#7c3aed)">AI</div>
+        <div class="demo-bubble bot">
+          ⬇️ Download video...<br>
+          🎙️ Whisper កំពុង transcribe...<br>
+          🌍 EN → 🇰🇭 ខ្មែរ...<br>
+          🗣️ Generate voice ខ្មែរ...
+          <div class="demo-progress">
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem">កំពុង process</div>
+            <div class="progress-bar"><div class="progress-fill"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-msg">
+        <div class="demo-avatar" style="background:linear-gradient(135deg,#3b7fff,#7c3aed)">AI</div>
+        <div class="demo-bubble bot">
+          🎬 <strong>បុរសម្នាក់ប្រឆាំងនឹងចក្រវាល</strong><br>
+          ✅ Dub រួចរាល់! 🇰🇭<br>
+          📄 khmer_subtitle.srt
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="section-label">តំលៃ</div>
+  <h2>ចាប់ផ្ដើម Free</h2>
+  <p class="section-sub" style="margin-inline:auto;">គ្មានការចុះឈ្មោះ — ប្រើ Telegram ភ្លាម</p>
+
+  <div class="pricing-grid">
+    <div class="price-card">
+      <div class="price-name">Free</div>
+      <div class="price-amount">$0 <span>/ ខែ</span></div>
+      <div class="price-desc">សាកល្បង bot ដោយឥតគិតថ្លៃ</div>
+      <ul class="price-features">
+        <li>Video រហូតដល់ ៥ នាទី</li>
+        <li>YouTube + TikTok</li>
+        <li>Whisper Base model</li>
+        <li>SRT subtitle</li>
+      </ul>
+      <a href="{{ telegram_bot }}" target="_blank" class="btn-outline">ចាប់ផ្ដើម →</a>
+    </div>
+
+    <div class="price-card featured">
+      <div class="price-badge">🔥 ពេញនិយម</div>
+      <div class="price-name">Pro</div>
+      <div class="price-amount">$5 <span>/ ខែ</span></div>
+      <div class="price-desc">សម្រាប់ content creator ខ្មែរ</div>
+      <ul class="price-features">
+        <li>Video រហូតដល់ ៣០ នាទី</li>
+        <li>គ្រប់ platform ទាំងអស់</li>
+        <li>Whisper Large model ត្រឹមត្រូវជាង</li>
+        <li>Priority queue</li>
+        <li>SRT subtitle</li>
+        <li>Auto title ខ្មែរ</li>
+      </ul>
+      <a href="{{ telegram_bot }}" target="_blank" class="btn-primary" style="display:block;text-align:center;padding:.75rem">ទទួល Pro →</a>
+    </div>
+
+    <div class="price-card">
+      <div class="price-name">Enterprise</div>
+      <div class="price-amount">$20 <span>/ ខែ</span></div>
+      <div class="price-desc">សម្រាប់ channel / media</div>
+      <ul class="price-features">
+        <li>Video គ្មានដែនកំណត់</li>
+        <li>API access</li>
+        <li>Multi-bot rental</li>
+        <li>Custom voice</li>
+        <li>Priority support</li>
+      </ul>
+      <a href="{{ telegram_bot }}" target="_blank" class="btn-outline">ទំនាក់ទំនង →</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta" style="max-width:1100px;margin:0 auto;">
+  <div class="cta-box">
+    <h2>ព្យាយាម Free ឥឡូវ!</h2>
+    <p>Copy link video ណាមួយ ហើយ paste ខាងក្រោម</p>
+    <div class="submit-box" style="max-width:420px;margin:0 auto;">
+      <input type="url" id="urlInput2" placeholder="paste link..." />
+      <button class="btn-primary" onclick="submitUrl2()">→</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p style="margin-bottom:.5rem">
+    © 2026 សម្រាយរឿង AI · by <strong>Kairozen</strong> ·
+    <a href="{{ telegram_bot }}" target="_blank">Telegram</a>
+  </p>
+  <p>built with Whisper AI + edge-tts + Python</p>
+</footer>
+
+<div id="toast">✅ កំពុងបើក Telegram bot...</div>
+
+<script>
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function submitUrl() {
+  const url = document.getElementById('urlInput').value.trim();
+  handleSubmit(url);
+}
+
+function submitUrl2() {
+  const url = document.getElementById('urlInput2').value.trim();
+  handleSubmit(url);
+}
+
+function handleSubmit(url) {
+  if (!url) { showToast('⚠️ សូមបញ្ចូល link ជាមុន'); return; }
+
+  const tgLink = `{{ telegram_bot }}`;
+  showToast('✅ កំពុងបើក Telegram bot...');
+  setTimeout(() => window.open(tgLink, '_blank'), 800);
+}
+
+// Enter key support
+document.getElementById('urlInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitUrl();
+});
+</script>
+</body>
+</html>

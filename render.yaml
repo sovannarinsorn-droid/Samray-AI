@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: samray-ai
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: TELEGRAM_BOT
+        value: https://t.me/smos_sne1
